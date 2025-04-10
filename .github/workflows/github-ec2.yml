@@ -24,24 +24,22 @@ jobs:
           REMOTE_USER: ${{ secrets.USERNAME }}
           TARGET: ${{ secrets.TARGET_DIR }}
 
-      - name: Executing remote ssh commands using ssh key
+      - name: Run build & deploy on EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST_DNS }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            sudo yum -y update
+            cd ${{ secrets.TARGET_DIR }}
+            echo "Installing Node dependencies"
+            npm install
+            echo "Building React app"
+            npm run build
+            echo "Installing and restarting Apache"
             sudo yum install -y httpd
             sudo systemctl start httpd
             sudo systemctl enable httpd
-            cd /home
-            ls
-            cd ec2-user
-            sudo yum install nodejs npm -y
-            npm install
-            sudo npm run build
-            cd build
-            sudo mv * /var/www/html
+            echo "Copying build to /var/www/html"
+            sudo cp -r build/* /var/www/html/
             sudo systemctl restart httpd
-            
